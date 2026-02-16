@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maryland Employee Cost Calculator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #1a3a52;
+            --primary-light: #2d5573;
+            --accent: #d4af37;
+            --accent-light: #f0d98d;
+            --bg: #fafbfc;
+            --surface: #ffffff;
+            --text: #1a1a1a;
+            --text-secondary: #6b7280;
+            --border: #e5e7eb;
+            --success: #059669;
+            --shadow: rgba(26, 58, 82, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Work Sans', sans-serif;
+            background: linear-gradient(135deg, #fafbfc 0%, #f3f4f6 100%);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px var(--shadow), 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 12px var(--shadow), 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .card-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--accent-light);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: 'Work Sans', sans-serif;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            background: var(--bg);
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 0.75rem;
+            cursor: pointer;
+            accent-color: var(--accent);
+        }
+
+        .checkbox-group label {
+            margin-bottom: 0;
+            cursor: pointer;
+        }
+
+        .nested-input {
+            margin-left: 2rem;
+            margin-top: 0.75rem;
+            padding: 1rem;
+            background: var(--bg);
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-light);
+        }
+
+        .summary-card {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 2.5rem;
+        }
+
+        .summary-card .card-title {
+            color: var(--accent-light);
+            border-bottom-color: rgba(244, 217, 141, 0.3);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .summary-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1.25rem;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .summary-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--accent-light);
+        }
+
+        .total-cost {
+            grid-column: 1 / -1;
+            background: rgba(212, 175, 55, 0.2);
+            padding: 2rem;
+            text-align: center;
+            border-radius: 12px;
+            border: 2px solid var(--accent-light);
+        }
+
+        .total-cost .summary-label {
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .total-cost .summary-value {
+            font-size: 3.5rem;
+        }
+
+        .breakdown {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .breakdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .breakdown-label {
+            font-weight: 500;
+        }
+
+        .breakdown-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--accent-light);
+        }
+
+        .info-note {
+            background: rgba(212, 175, 55, 0.1);
+            border-left: 3px solid var(--accent);
+            padding: 1rem;
+            margin-top: 1.5rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .export-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--accent);
+            color: var(--primary);
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-family: 'Work Sans', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1.5rem;
+            box-shadow: 0 4px 6px rgba(212, 175, 55, 0.3);
+        }
+
+        .export-button:hover {
+            background: var(--accent-light);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(212, 175, 55, 0.4);
+        }
+
+        .export-button:active {
+            transform: translateY(0);
+        }
+
+        .export-button svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .calculator-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .total-cost .summary-value {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Employee Total Compensation Calculator</h1>
+            <div class="subtitle">Maryland Comprehensive Compensation Package</div>
+        </header>
+
+        <div class="calculator-grid">
+            <!-- Base Compensation -->
+            <div class="card">
+                <h2 class="card-title">Base Compensation</h2>
+                
+                <div class="form-group">
+                    <label for="salaryType">Compensation Type</label>
+                    <select id="salaryType" onchange="updateCalculator()">
+                        <option value="annual">Annual Salary</option>
+                        <option value="hourly">Hourly Wage</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="annualSalaryGroup">
+                    <label for="annualSalary">Annual Salary ($)</label>
+                    <input type="number" id="annualSalary" value="75000" min="0" step="1000" oninput="updateCalculator()">
+                </div>
+
+                <div class="form-group" id="hourlyWageGroup" style="display: none;">
+                    <label for="hourlyWage">Hourly Wage ($)</label>
+                    <input type="number" id="hourlyWage" value="36.06" min="0" step="0.25" oninput="updateCalculator()">
+                </div>
+
+                <div class="form-group" id="hoursGroup" style="display: none;">
+                    <label for="hoursPerWeek">Hours per Week</label>
+                    <input type="number" id="hoursPerWeek" value="40" min="1" max="168" oninput="updateCalculator()">
+                </div>
+            </div>
+
+            <!-- Employer Taxes -->
+            <div class="card">
+                <h2 class="card-title">Payroll Taxes (Employer Portion)</h2>
+                
+                <div class="form-group">
+                    <label>Social Security (Employer: 6.2%)</label>
+                    <input type="number" id="socialSecurity" value="0" readonly style="background: #f9fafb; color: var(--text-secondary);">
+                </div>
+
+                <div class="form-group">
+                    <label>Medicare (Employer: 1.45%)</label>
+                    <input type="number" id="medicare" value="0" readonly style="background: #f9fafb; color: var(--text-secondary);">
+                </div>
+
+                <div class="form-group">
+                    <label>Federal Unemployment Tax (FUTA)</label>
+                    <input type="number" id="futa" value="42" step="1" oninput="updateCalculator()">
+                </div>
+
+                <div class="form-group">
+                    <label>MD State Unemployment Tax (SUTA %)</label>
+                    <input type="number" id="sutaRate" value="2.6" min="0" max="10" step="0.1" oninput="updateCalculator()">
+                </div>
+            </div>
+
+            <!-- Benefits -->
+            <div class="card">
+                <h2 class="card-title">Employee Benefits</h2>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="ptoEnabled" onchange="toggleInput('pto'); updateCalculator();">
+                    <label for="ptoEnabled">Paid Time Off</label>
+                </div>
+                <div id="ptoInput" class="nested-input" style="display: none;">
+                    <label for="ptoDays">Annual PTO Days</label>
+                    <input type="number" id="ptoDays" value="15" min="0" max="365" oninput="updateCalculator()">
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="healthInsuranceEnabled" onchange="toggleInput('healthInsurance'); updateCalculator();">
+                    <label for="healthInsuranceEnabled">Health Insurance</label>
+                </div>
+                <div id="healthInsuranceInput" class="nested-input" style="display: none;">
+                    <label for="healthInsurance">Monthly Premium Contribution ($)</label>
+                    <input type="number" id="healthInsurance" value="600" min="0" step="50" oninput="updateCalculator()">
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="retirementEnabled" onchange="toggleInput('retirement'); updateCalculator();">
+                    <label for="retirementEnabled">Retirement Plan Match (401k)</label>
+                </div>
+                <div id="retirementInput" class="nested-input" style="display: none;">
+                    <label for="retirementPercent">Company Match (%)</label>
+                    <input type="number" id="retirementPercent" value="4" min="0" max="100" step="0.5" oninput="updateCalculator()">
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="dentalEnabled" onchange="toggleInput('dental'); updateCalculator();">
+                    <label for="dentalEnabled">Dental Insurance</label>
+                </div>
+                <div id="dentalInput" class="nested-input" style="display: none;">
+                    <label for="dental">Monthly Cost ($)</label>
+                    <input type="number" id="dental" value="50" min="0" step="10" oninput="updateCalculator()">
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="visionEnabled" onchange="toggleInput('vision'); updateCalculator();">
+                    <label for="visionEnabled">Vision Insurance</label>
+                </div>
+                <div id="visionInput" class="nested-input" style="display: none;">
+                    <label for="vision">Monthly Cost ($)</label>
+                    <input type="number" id="vision" value="15" min="0" step="5" oninput="updateCalculator()">
+                </div>
+            </div>
+
+            <!-- Software & Tools -->
+            <div class="card">
+                <h2 class="card-title">Tools & Resources</h2>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="vivCareEnabled" onchange="toggleInput('vivCare'); updateCalculator();">
+                    <label for="vivCareEnabled">Viv Care Platform</label>
+                </div>
+                <div id="vivCareInput" class="nested-input" style="display: none;">
+                    <label for="vivCare">Annual Cost ($)</label>
+                    <input type="number" id="vivCare" value="600" min="0" step="50" oninput="updateCalculator()">
+                    <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem;">Estimated: $50/month for occupational health services</small>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="viventiumEnabled" onchange="toggleInput('viventium'); updateCalculator();">
+                    <label for="viventiumEnabled">Viventium Payroll</label>
+                </div>
+                <div id="viventiumInput" class="nested-input" style="display: none;">
+                    <label for="viventium">Annual Cost ($)</label>
+                    <input type="number" id="viventium" value="72" min="0" step="12" oninput="updateCalculator()">
+                    <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem;">Estimated: $6/user/month (payroll & HR)</small>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="teamsEnabled" onchange="toggleInput('teams'); updateCalculator();">
+                    <label for="teamsEnabled">Microsoft O365</label>
+                </div>
+                <div id="teamsInput" class="nested-input" style="display: none;">
+                    <label for="teams">Annual Cost ($)</label>
+                    <input type="number" id="teams" value="72" min="0" step="12" oninput="updateCalculator()">
+                    <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem;">Estimated: $6/user/month (Business Basic)</small>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="vitalityEnabled" onchange="toggleInput('vitality'); updateCalculator();">
+                    <label for="vitalityEnabled">Vitable Health</label>
+                </div>
+                <div id="vitalityInput" class="nested-input" style="display: none;">
+                    <label for="vitality">Annual Cost ($)</label>
+                    <input type="number" id="vitality" value="24" min="0" step="12" oninput="updateCalculator()">
+                    <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem;">Estimated: $2/user/month</small>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="careAcademyEnabled" onchange="toggleInput('careAcademy'); updateCalculator();">
+                    <label for="careAcademyEnabled">Care Academy</label>
+                </div>
+                <div id="careAcademyInput" class="nested-input" style="display: none;">
+                    <label for="careAcademy">Monthly Agency Cost ($)</label>
+                    <input type="number" id="careAcademy" value="239" min="0" step="10" oninput="updateCalculator()">
+                    <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem;">Agency-level pricing: $119-$349/month (not per employee)</small>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="humanInterestEnabled" onchange="toggleInput('humanInterest'); updateCalculator();">
+                    <label for="humanInterestEnabled">Human Interest 401(k)</label>
+                </div>
+                <div id="humanInterestInput" class="nested-input" style="display: none;">
+                    <label for="humanInterest">Annual Cost ($)</label>
+                    <input type="number" id="humanInterest" value="60" min="0" step="12" oninput="updateCalculator()">
+                    <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem;">Estimated: $5/user/month (Essentials plan)</small>
+                </div>
+            </div>
+
+            <!-- Additional Costs -->
+            <div class="card">
+                <h2 class="card-title">Additional Investment</h2>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="trainingEnabled" onchange="toggleInput('training'); updateCalculator();">
+                    <label for="trainingEnabled">Training & Development</label>
+                </div>
+                <div id="trainingInput" class="nested-input" style="display: none;">
+                    <label for="training">Annual Budget ($)</label>
+                    <input type="number" id="training" value="2000" min="0" step="100" oninput="updateCalculator()">
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="equipmentEnabled" onchange="toggleInput('equipment'); updateCalculator();">
+                    <label for="equipmentEnabled">Equipment & Hardware</label>
+                </div>
+                <div id="equipmentInput" class="nested-input" style="display: none;">
+                    <label for="equipment">Annual Cost ($)</label>
+                    <input type="number" id="equipment" value="500" min="0" step="50" oninput="updateCalculator()">
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="otherCostsEnabled" onchange="toggleInput('otherCosts'); updateCalculator();">
+                    <label for="otherCostsEnabled">Other Costs</label>
+                </div>
+                <div id="otherCostsInput" class="nested-input" style="display: none;">
+                    <label for="otherCosts">Annual Cost ($)</label>
+                    <input type="number" id="otherCosts" value="0" min="0" step="100" oninput="updateCalculator()">
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="card summary-card">
+                <h2 class="card-title">Total Compensation Summary</h2>
+                
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="summary-label">Base Salary</div>
+                        <div class="summary-value" id="displaySalary">$75,000</div>
+                    </div>
+                    
+                    <div class="summary-item">
+                        <div class="summary-label">Payroll Taxes</div>
+                        <div class="summary-value" id="displayTaxes">$0</div>
+                    </div>
+                    
+                    <div class="summary-item">
+                        <div class="summary-label">Benefits Package</div>
+                        <div class="summary-value" id="displayBenefits">$0</div>
+                    </div>
+                    
+                    <div class="summary-item">
+                        <div class="summary-label">Tools & Resources</div>
+                        <div class="summary-value" id="displayAdditional">$0</div>
+                    </div>
+
+                    <div class="total-cost">
+                        <div class="summary-label">Total Annual Compensation Package</div>
+                        <div class="summary-value" id="displayTotal">$0</div>
+                    </div>
+                </div>
+
+                <div class="breakdown">
+                    <h3 style="margin-bottom: 1rem; font-family: 'Cormorant Garamond', serif; color: var(--accent-light);">Compensation Details</h3>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">Effective Hourly Value</span>
+                        <span class="breakdown-value" id="effectiveHourly">$0.00</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">Total Value Above Base Salary</span>
+                        <span class="breakdown-value" id="costPercent">0%</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="breakdown-label">Monthly Compensation Value</span>
+                        <span class="breakdown-value" id="monthlyCost">$0</span>
+                    </div>
+                </div>
+
+                <div class="info-note">
+                    <strong>Note:</strong> This calculator shows the complete value of an employee's total compensation package, including base salary, employer-paid taxes, benefits, and resources provided. Based on 2025 tax rates and typical software pricing. Social Security wage base is $176,100. FUTA is calculated at 0.6% on first $7,000 after state credit. Software costs are estimated based on publicly available pricing as of early 2025 and may vary by specific plan, number of users, and negotiated rates. Care Academy pricing is agency-level (flat monthly fee). This represents the total investment in the employee's compensation and development.
+                </div>
+
+                <button class="export-button" onclick="exportToPDF()">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Export to PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleInput(id) {
+            const checkbox = document.getElementById(id + 'Enabled');
+            const input = document.getElementById(id + 'Input');
+            input.style.display = checkbox.checked ? 'block' : 'none';
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount);
+        }
+
+        function updateCalculator() {
+            // Get salary type and calculate annual salary
+            const salaryType = document.getElementById('salaryType').value;
+            let annualSalary;
+
+            if (salaryType === 'annual') {
+                document.getElementById('annualSalaryGroup').style.display = 'block';
+                document.getElementById('hourlyWageGroup').style.display = 'none';
+                document.getElementById('hoursGroup').style.display = 'none';
+                annualSalary = parseFloat(document.getElementById('annualSalary').value) || 0;
+            } else {
+                document.getElementById('annualSalaryGroup').style.display = 'none';
+                document.getElementById('hourlyWageGroup').style.display = 'block';
+                document.getElementById('hoursGroup').style.display = 'block';
+                const hourlyWage = parseFloat(document.getElementById('hourlyWage').value) || 0;
+                const hoursPerWeek = parseFloat(document.getElementById('hoursPerWeek').value) || 40;
+                annualSalary = hourlyWage * hoursPerWeek * 52;
+            }
+
+            // Calculate employer taxes
+            const socialSecurityWageBase = 176100; // 2025 wage base
+            const socialSecurityTax = Math.min(annualSalary, socialSecurityWageBase) * 0.062;
+            const medicareTax = annualSalary * 0.0145;
+            
+            // FUTA: 0.6% on first $7,000 (after state credit)
+            const futa = parseFloat(document.getElementById('futa').value) || 42;
+            
+            // Maryland SUTA
+            const sutaRate = parseFloat(document.getElementById('sutaRate').value) || 2.6;
+            const suta = annualSalary * (sutaRate / 100);
+
+            const totalTaxes = socialSecurityTax + medicareTax + futa + suta;
+
+            // Update tax display fields
+            document.getElementById('socialSecurity').value = Math.round(socialSecurityTax);
+            document.getElementById('medicare').value = Math.round(medicareTax);
+
+            // Calculate benefits
+            let totalBenefits = 0;
+
+            if (document.getElementById('ptoEnabled').checked) {
+                const ptoDays = parseFloat(document.getElementById('ptoDays').value) || 0;
+                const dailyRate = annualSalary / 260; // Assuming 260 work days per year
+                totalBenefits += ptoDays * dailyRate;
+            }
+
+            if (document.getElementById('healthInsuranceEnabled').checked) {
+                const healthInsurance = parseFloat(document.getElementById('healthInsurance').value) || 0;
+                totalBenefits += healthInsurance * 12;
+            }
+
+            if (document.getElementById('retirementEnabled').checked) {
+                const retirementPercent = parseFloat(document.getElementById('retirementPercent').value) || 0;
+                totalBenefits += annualSalary * (retirementPercent / 100);
+            }
+
+            if (document.getElementById('dentalEnabled').checked) {
+                const dental = parseFloat(document.getElementById('dental').value) || 0;
+                totalBenefits += dental * 12;
+            }
+
+            if (document.getElementById('visionEnabled').checked) {
+                const vision = parseFloat(document.getElementById('vision').value) || 0;
+                totalBenefits += vision * 12;
+            }
+
+            // Calculate additional costs
+            let totalAdditional = 0;
+
+            // Software platforms (per employee annual costs)
+            if (document.getElementById('vivCareEnabled').checked) {
+                totalAdditional += parseFloat(document.getElementById('vivCare').value) || 0;
+            }
+
+            if (document.getElementById('viventiumEnabled').checked) {
+                totalAdditional += parseFloat(document.getElementById('viventium').value) || 0;
+            }
+
+            if (document.getElementById('teamsEnabled').checked) {
+                totalAdditional += parseFloat(document.getElementById('teams').value) || 0;
+            }
+
+            if (document.getElementById('vitalityEnabled').checked) {
+                totalAdditional += parseFloat(document.getElementById('vitality').value) || 0;
+            }
+
+            if (document.getElementById('careAcademyEnabled').checked) {
+                // Care Academy is a monthly agency cost, not per employee
+                const careAcademyMonthly = parseFloat(document.getElementById('careAcademy').value) || 0;
+                totalAdditional += careAcademyMonthly * 12;
+            }
+
+            if (document.getElementById('humanInterestEnabled').checked) {
+                totalAdditional += parseFloat(document.getElementById('humanInterest').value) || 0;
+            }
+
+            // Other costs
+            if (document.getElementById('trainingEnabled').checked) {
+                totalAdditional += parseFloat(document.getElementById('training').value) || 0;
+            }
+
+            if (document.getElementById('equipmentEnabled').checked) {
+                totalAdditional += parseFloat(document.getElementById('equipment').value) || 0;
+            }
+
+            if (document.getElementById('otherCostsEnabled').checked) {
+                totalAdditional += parseFloat(document.getElementById('otherCosts').value) || 0;
+            }
+
+            // Calculate totals
+            const totalCost = annualSalary + totalTaxes + totalBenefits + totalAdditional;
+            const effectiveHourly = totalCost / 2080; // 40 hours * 52 weeks
+            const costPercent = ((totalCost - annualSalary) / annualSalary * 100).toFixed(1);
+            const monthlyCost = totalCost / 12;
+
+            // Update display
+            document.getElementById('displaySalary').textContent = formatCurrency(annualSalary);
+            document.getElementById('displayTaxes').textContent = formatCurrency(totalTaxes);
+            document.getElementById('displayBenefits').textContent = formatCurrency(totalBenefits);
+            document.getElementById('displayAdditional').textContent = formatCurrency(totalAdditional);
+            document.getElementById('displayTotal').textContent = formatCurrency(totalCost);
+            document.getElementById('effectiveHourly').textContent = '$' + effectiveHourly.toFixed(2);
+            document.getElementById('costPercent').textContent = costPercent + '%';
+            document.getElementById('monthlyCost').textContent = formatCurrency(monthlyCost);
+        }
+
+        // Initialize calculator on page load
+        updateCalculator();
+
+        // Export to PDF function
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Get current date
+            const today = new Date();
+            const dateString = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            
+            // Get all values
+            const salaryType = document.getElementById('salaryType').value;
+            let annualSalary;
+            if (salaryType === 'annual') {
+                annualSalary = parseFloat(document.getElementById('annualSalary').value) || 0;
+            } else {
+                const hourlyWage = parseFloat(document.getElementById('hourlyWage').value) || 0;
+                const hoursPerWeek = parseFloat(document.getElementById('hoursPerWeek').value) || 40;
+                annualSalary = hourlyWage * hoursPerWeek * 52;
+            }
+            
+            // Colors
+            const primaryColor = [26, 58, 82];
+            const accentColor = [212, 175, 55];
+            
+            // Compact Header
+            doc.setFillColor(...primaryColor);
+            doc.rect(0, 0, 210, 28, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(18);
+            doc.setFont(undefined, 'bold');
+            doc.text('Total Compensation Package', 105, 12, { align: 'center' });
+            doc.setFontSize(9);
+            doc.setFont(undefined, 'normal');
+            doc.text('Maryland Employee Compensation Analysis', 105, 19, { align: 'center' });
+            
+            // Date
+            doc.setTextColor(...primaryColor);
+            doc.setFontSize(8);
+            doc.text(dateString, 20, 35);
+            
+            // Summary Section
+            let yPos = 43;
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(...accentColor);
+            doc.text('Total Compensation Summary', 20, yPos);
+            
+            yPos += 6;
+            doc.setFontSize(9);
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(...primaryColor);
+            
+            const totalCostValue = document.getElementById('displayTotal').textContent;
+            const baseSalaryValue = document.getElementById('displaySalary').textContent;
+            const taxesValue = document.getElementById('displayTaxes').textContent;
+            const benefitsValue = document.getElementById('displayBenefits').textContent;
+            const additionalValue = document.getElementById('displayAdditional').textContent;
+            const effectiveHourlyValue = document.getElementById('effectiveHourly').textContent;
+            const costPercentValue = document.getElementById('costPercent').textContent;
+            const monthlyCostValue = document.getElementById('monthlyCost').textContent;
+            
+            // Cost breakdown - base salary bold
+            doc.setFont(undefined, 'bold');
+            doc.text('Base Salary:', 25, yPos);
+            doc.text(baseSalaryValue, 185, yPos, { align: 'right' });
+            yPos += 4.5;
+            
+            doc.setFont(undefined, 'normal');
+            doc.text('Payroll Taxes (Employer):', 25, yPos);
+            doc.text(taxesValue, 185, yPos, { align: 'right' });
+            yPos += 4.5;
+            
+            doc.text('Benefits Package:', 25, yPos);
+            doc.text(benefitsValue, 185, yPos, { align: 'right' });
+            yPos += 4.5;
+            
+            doc.text('Tools & Resources:', 25, yPos);
+            doc.text(additionalValue, 185, yPos, { align: 'right' });
+            
+            yPos += 2;
+            doc.setDrawColor(...accentColor);
+            doc.line(20, yPos, 190, yPos);
+            yPos += 5;
+            
+            // Additional metrics
+            doc.setFont(undefined, 'bold');
+            doc.text('Compensation Metrics', 20, yPos);
+            yPos += 5;
+            doc.setFont(undefined, 'normal');
+            
+            const metrics = [
+                ['Effective Hourly Value:', effectiveHourlyValue],
+                ['Total Value Above Base Salary:', costPercentValue],
+                ['Monthly Compensation Value:', monthlyCostValue]
+            ];
+            
+            metrics.forEach(([label, value]) => {
+                doc.text(label, 25, yPos);
+                doc.text(value, 185, yPos, { align: 'right' });
+                yPos += 4.5;
+            });
+            
+            // Detailed Breakdown
+            yPos += 4;
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(...accentColor);
+            doc.text('Compensation Components', 20, yPos);
+            yPos += 6;
+            
+            doc.setFontSize(8);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(...primaryColor);
+            
+            // Taxes Section
+            doc.text('PAYROLL TAXES (EMPLOYER PORTION)', 20, yPos);
+            yPos += 4;
+            doc.setFont(undefined, 'normal');
+            
+            const socialSecurity = document.getElementById('socialSecurity').value;
+            const medicare = document.getElementById('medicare').value;
+            const futa = document.getElementById('futa').value;
+            const sutaRate = document.getElementById('sutaRate').value;
+            const suta = annualSalary * (parseFloat(sutaRate) / 100);
+            
+            const taxItems = [
+                ['Social Security (Employer: 6.2%):', '$' + parseInt(socialSecurity).toLocaleString()],
+                ['Medicare (Employer: 1.45%):', '$' + parseInt(medicare).toLocaleString()],
+                ['Federal Unemployment Tax (FUTA):', '$' + parseInt(futa).toLocaleString()],
+                ['MD State Unemployment Tax (' + sutaRate + '%):', '$' + Math.round(suta).toLocaleString()]
+            ];
+            
+            taxItems.forEach(([label, value]) => {
+                doc.text(label, 25, yPos);
+                doc.text(value, 95, yPos);
+                yPos += 3.5;
+            });
+            
+            // Benefits Section
+            yPos += 2;
+            doc.setFont(undefined, 'bold');
+            doc.text('BENEFITS PACKAGE', 20, yPos);
+            yPos += 4;
+            doc.setFont(undefined, 'normal');
+            
+            const benefitItems = [];
+            
+            if (document.getElementById('ptoEnabled').checked) {
+                const ptoDays = document.getElementById('ptoDays').value;
+                const dailyRate = annualSalary / 260;
+                benefitItems.push(['Paid Time Off (' + ptoDays + ' days):', '$' + Math.round(ptoDays * dailyRate).toLocaleString()]);
+            }
+            if (document.getElementById('healthInsuranceEnabled').checked) {
+                const health = document.getElementById('healthInsurance').value;
+                benefitItems.push(['Health Insurance:', '$' + (health * 12).toLocaleString()]);
+            }
+            if (document.getElementById('retirementEnabled').checked) {
+                const retirementPercent = document.getElementById('retirementPercent').value;
+                benefitItems.push(['401(k) Match (' + retirementPercent + '%):', '$' + Math.round(annualSalary * (retirementPercent / 100)).toLocaleString()]);
+            }
+            if (document.getElementById('dentalEnabled').checked) {
+                const dental = document.getElementById('dental').value;
+                benefitItems.push(['Dental Insurance:', '$' + (dental * 12).toLocaleString()]);
+            }
+            if (document.getElementById('visionEnabled').checked) {
+                const vision = document.getElementById('vision').value;
+                benefitItems.push(['Vision Insurance:', '$' + (vision * 12).toLocaleString()]);
+            }
+            
+            if (benefitItems.length === 0) {
+                doc.text('None selected', 25, yPos);
+                yPos += 3.5;
+            } else {
+                benefitItems.forEach(([label, value]) => {
+                    doc.text(label, 25, yPos);
+                    doc.text(value, 95, yPos);
+                    yPos += 3.5;
+                });
+            }
+            
+            // Software & Tools Section
+            yPos += 2;
+            doc.setFont(undefined, 'bold');
+            doc.text('TOOLS & RESOURCES PROVIDED', 20, yPos);
+            yPos += 4;
+            doc.setFont(undefined, 'normal');
+            
+            const softwareItems = [];
+            
+            if (document.getElementById('vivCareEnabled').checked) {
+                softwareItems.push(['Viv Care Platform:', '$' + document.getElementById('vivCare').value]);
+            }
+            if (document.getElementById('viventiumEnabled').checked) {
+                softwareItems.push(['Viventium Payroll:', '$' + document.getElementById('viventium').value]);
+            }
+            if (document.getElementById('teamsEnabled').checked) {
+                softwareItems.push(['Microsoft O365:', '$' + document.getElementById('teams').value]);
+            }
+            if (document.getElementById('vitalityEnabled').checked) {
+                softwareItems.push(['Vitable Health:', '$' + document.getElementById('vitality').value]);
+            }
+            if (document.getElementById('careAcademyEnabled').checked) {
+                const careAcademy = document.getElementById('careAcademy').value * 12;
+                softwareItems.push(['Care Academy:', '$' + careAcademy.toLocaleString()]);
+            }
+            if (document.getElementById('humanInterestEnabled').checked) {
+                softwareItems.push(['Human Interest 401(k):', '$' + document.getElementById('humanInterest').value]);
+            }
+            
+            if (softwareItems.length === 0) {
+                doc.text('None selected', 25, yPos);
+                yPos += 3.5;
+            } else {
+                softwareItems.forEach(([label, value]) => {
+                    doc.text(label, 25, yPos);
+                    doc.text(value, 95, yPos);
+                    yPos += 3.5;
+                });
+            }
+            
+            // Other Costs Section
+            yPos += 2;
+            doc.setFont(undefined, 'bold');
+            doc.text('ADDITIONAL INVESTMENT', 20, yPos);
+            yPos += 4;
+            doc.setFont(undefined, 'normal');
+            
+            const otherItems = [];
+            
+            if (document.getElementById('trainingEnabled').checked) {
+                otherItems.push(['Training & Development:', '$' + document.getElementById('training').value]);
+            }
+            if (document.getElementById('equipmentEnabled').checked) {
+                otherItems.push(['Equipment & Hardware:', '$' + document.getElementById('equipment').value]);
+            }
+            if (document.getElementById('otherCostsEnabled').checked) {
+                otherItems.push(['Other Costs:', '$' + document.getElementById('otherCosts').value]);
+            }
+            
+            if (otherItems.length === 0) {
+                doc.text('None selected', 25, yPos);
+                yPos += 3.5;
+            } else {
+                otherItems.forEach(([label, value]) => {
+                    doc.text(label, 25, yPos);
+                    doc.text(value, 95, yPos);
+                    yPos += 3.5;
+                });
+            }
+            
+            // Total Annual Compensation Package at bottom - highlighted and bold
+            yPos += 6;
+            doc.setFillColor(240, 217, 141);
+            doc.roundedRect(20, yPos, 170, 12, 3, 3, 'F');
+            doc.setFontSize(13);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(...primaryColor);
+            doc.text('Total Annual Compensation Package:', 25, yPos + 8);
+            doc.text(totalCostValue, 185, yPos + 8, { align: 'right' });
+            
+            // Footer
+            doc.setFontSize(7);
+            doc.setTextColor(150, 150, 150);
+            doc.text('Generated by Maryland Employee Total Compensation Calculator', 105, 287, { align: 'center' });
+            
+            // Save the PDF
+            doc.save('Employee-Compensation-Package-' + dateString.replace(/\s/g, '-') + '.pdf');
+        }
+    </script>
+</body>
+</html>
